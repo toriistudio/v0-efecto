@@ -104,7 +104,11 @@ export default function Efecto({
   }
 
   return (
-    <Canvas camera={{ position: [0, 0, cameraDistance], fov: 50 }}>
+    <Canvas
+      camera={{ position: [0, 0, cameraDistance], fov: 50 }}
+      gl={{ alpha: true }}
+      style={{ background: "transparent" }}
+    >
       <AsciiScene settings={asciiSettings}>{content}</AsciiScene>
       {showOrbitControls ? <OrbitControls enablePan={false} /> : null}
     </Canvas>

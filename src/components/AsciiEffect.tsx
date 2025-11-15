@@ -175,7 +175,7 @@ class AsciiEffectImpl extends Effect {
     ];
 
     super("AsciiEffect", fragmentShader, {
-      blendFunction: BlendFunction.NORMAL,
+      blendFunction: BlendFunction.SRC,
       uniforms: new Map(uniformEntries),
     });
   }

@@ -230,7 +230,6 @@ type AsciiSceneProps = {
 export function AsciiScene({ settings, children }: AsciiSceneProps) {
   return (
     <>
-      <color attach="background" args={["#050505"]} />
       <ambientLight intensity={0.4} />
       <directionalLight position={[4, 6, 8]} intensity={1.2} />
       <pointLight position={[-4, -2, -6]} intensity={0.8} />

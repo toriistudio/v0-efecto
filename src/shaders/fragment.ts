@@ -209,9 +209,9 @@ export default `
       centered *= 1.0 + curvature * dist;
       workingUV = centered * 0.5 + 0.5;
   
-      // Black out edges if out of bounds
+      // Make out-of-bounds transparent so parent background shows through
       if (workingUV.x < 0.0 || workingUV.x > 1.0 || workingUV.y < 0.0 || workingUV.y > 1.0) {
-        outputColor = vec4(0.0, 0.0, 0.0, 1.0);
+        outputColor = vec4(0.0, 0.0, 0.0, 0.0);
         return;
       }
     }
