@@ -30,7 +30,7 @@ const PRESET_POST = {
 
 export default function ExamplePage() {
   return (
-    <div style={{ width: "100vw", height: "100vh" }}>
+    <div style={{ width: "100vw", height: "100vh", backgroundColor: "red" }}>
       <Efecto
         src="https://res.cloudinary.com/dz8kk1l4r/image/upload/v1763233793/astronaut_q84mbj.png"
         cellSize={4}

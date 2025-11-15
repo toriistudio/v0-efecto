@@ -468,7 +468,7 @@
   integrity sha512-k+/Rkcyx//P6fetPoLMb8pBeqJBNGx81uuf7iljX9++yNBVRDQgD04L+SVXmXmh5ZP4/WOp4mWF0kmi06PW2tA==
 
 "@toriistudio/v0-efecto@file:.yalc/@toriistudio/v0-efecto":
-  version "0.1.0"
+  version "0.0.0"
 
 "@types/babel__core@^7.20.5":
   version "7.20.5"
