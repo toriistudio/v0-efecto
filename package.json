@@ -1,6 +1,6 @@
 {
   "name": "@toriistudio/v0-efecto",
-  "version": "0.0.0",
+  "version": "0.0.1",
   "description": "V0 Efecto",
   "main": "./dist/index.cjs",
   "module": "./dist/index.mjs",
