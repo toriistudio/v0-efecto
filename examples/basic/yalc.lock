@@ -1,0 +1,9 @@
+{
+  "version": "v1",
+  "packages": {
+    "@toriistudio/v0-efecto": {
+      "signature": "3174a78cde3b304855a5d94fce15f14c",
+      "file": true
+    }
+  }
+}
