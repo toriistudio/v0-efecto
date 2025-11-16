@@ -9,8 +9,8 @@ import {
   type PublicAsciiPostProcessingSettings,
 } from "@/components/AsciiEffect";
 import FloatingTorus from "@/components/FloatingTorus";
-import UploadedImage from "@/components/UploadedImage";
-import UploadedVideo from "@/components/UploadedVideo";
+import MediaImage from "@/components/MediaImage";
+import MediaVideo from "@/components/MediaVideo";
 import { type MediaAdjustments } from "@/components/mediaAdjustments";
 
 const VIDEO_EXTENSIONS = [
@@ -75,6 +75,7 @@ const DEFAULT_POST_PROCESSING: PublicAsciiPostProcessingSettings = {
 export type EfectoProps = Partial<AsciiBaseProps> & {
   postProcessing?: Partial<PublicAsciiPostProcessingSettings>;
   src?: string;
+  mediaType?: "image" | "video";
   mouseParallax?: boolean;
   parallaxIntensity?: number;
   cameraDistance?: number;
@@ -89,6 +90,7 @@ export default function Efecto({
   style = DEFAULT_ASCII_BASE.style,
   postProcessing,
   src,
+  mediaType,
   mouseParallax = false,
   parallaxIntensity = 0.5,
   cameraDistance = 5,
@@ -114,17 +116,17 @@ export default function Efecto({
   );
 
   if (src) {
-    const resolvedMediaType = inferMediaType(src);
+    const resolvedMediaType = mediaType ?? inferMediaType(src);
     content =
       resolvedMediaType === "video" ? (
-        <UploadedVideo
+        <MediaVideo
           src={src}
           mouseParallax={mouseParallax}
           parallaxIntensity={parallaxIntensity}
           adjustments={mediaAdjustments}
         />
       ) : (
-        <UploadedImage
+        <MediaImage
           src={src}
           mouseParallax={mouseParallax}
           parallaxIntensity={parallaxIntensity}

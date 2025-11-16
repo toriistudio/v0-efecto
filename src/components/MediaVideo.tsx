@@ -16,7 +16,7 @@ import {
   MEDIA_ADJUST_VERTEX_SHADER,
 } from "@/shaders/mediaAdjustments";
 
-type UploadedVideoProps = {
+type MediaVideoProps = {
   src: string;
   mouseParallax?: boolean;
   parallaxIntensity?: number;
@@ -24,13 +24,13 @@ type UploadedVideoProps = {
   adjustments?: MediaAdjustments;
 };
 
-export default function UploadedVideo({
+export default function MediaVideo({
   src,
   mouseParallax = false,
   parallaxIntensity = 0.5,
   onPlaybackError,
   adjustments,
-}: UploadedVideoProps) {
+}: MediaVideoProps) {
   const texture = useVideoTexture(src, {
     autoplay: true,
     loop: true,

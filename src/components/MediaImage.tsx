@@ -15,26 +15,28 @@ import {
   type MediaAdjustments,
 } from "@/components/mediaAdjustments";
 
-type UploadedImageProps = {
+type MediaImageProps = {
   src: string;
   mouseParallax?: boolean;
   parallaxIntensity?: number;
   adjustments?: MediaAdjustments;
 };
 
-export default function UploadedImage({
+export default function MediaImage({
   src,
   mouseParallax = false,
   parallaxIntensity = 0.5,
   adjustments,
-}: UploadedImageProps) {
+}: MediaImageProps) {
   const texture = useLoader(TextureLoader, src);
   const meshRef = useRef<Mesh>(null);
   const materialRef = useRef<ShaderMaterial | null>(null);
   const viewport = useThree((state) => state.viewport);
 
   const aspect = useMemo(() => {
-    const image = texture.image as { width: number; height: number } | undefined;
+    const image = texture.image as
+      | { width: number; height: number }
+      | undefined;
     if (image && image.height > 0) {
       return image.width / image.height;
     }

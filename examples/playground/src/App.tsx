@@ -2,17 +2,11 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import type { ReactNode } from "react";
-
-import { Canvas } from "@react-three/fiber";
-import { OrbitControls } from "@react-three/drei";
 import { Playground, useControls } from "@toriistudio/v0-playground";
 import {
+  Efecto,
   ASCII_POST_PROCESSING_DEFAULTS,
-  AsciiScene,
-  FloatingTorus,
   buildAsciiEffectProps,
-  UploadedImage,
-  UploadedVideo,
   type AsciiStyle,
   type AsciiBaseProps,
   type PublicAsciiPostProcessingSettings,
@@ -398,36 +392,32 @@ function AsciiPlaygroundCanvas() {
   const showCopyButtonFn = useCallback(
     ({ values, jsonToComponentString }: CopyButtonHandlerArgs) => {
       const asciiProps = buildAsciiEffectProps(values, ASCII_EFFECT_BASE_PROPS);
-      const props: Record<string, unknown> = {
-        ...asciiProps,
-        mouseParallax: values.mouseParallax ?? false,
-        parallaxIntensity:
-          typeof values.parallaxIntensity === "number"
-            ? values.parallaxIntensity
-            : 0.5,
-        src: mediaSource?.src ?? "/your-image-or-video-url",
-      };
-
-      if (mediaSource?.src) {
-        props.src = mediaSource.src;
-      }
-
-      props.mediaAdjustments = {
-        brightness:
-          typeof values.mediaBrightness === "number"
-            ? values.mediaBrightness
-            : 1,
-        contrast:
-          typeof values.mediaContrast === "number" ? values.mediaContrast : 1,
-        saturation:
-          typeof values.mediaSaturation === "number"
-            ? values.mediaSaturation
-            : 1,
-      };
 
       return jsonToComponentString({
         componentName: "Efecto",
-        props,
+        props: {
+          ...asciiProps,
+          mediaAdjustments: {
+            brightness:
+              typeof values.mediaBrightness === "number"
+                ? values.mediaBrightness
+                : 1,
+            contrast:
+              typeof values.mediaContrast === "number"
+                ? values.mediaContrast
+                : 1,
+            saturation:
+              typeof values.mediaSaturation === "number"
+                ? values.mediaSaturation
+                : 1,
+          },
+          mouseParallax: values.mouseParallax ?? false,
+          parallaxIntensity:
+            typeof values.parallaxIntensity === "number"
+              ? values.parallaxIntensity
+              : 0.5,
+          src: "/your-image-or-video-url",
+        },
       });
     },
     [mediaSource]
@@ -536,40 +526,20 @@ function AsciiPlaygroundCanvas() {
     [mediaBrightness, mediaContrast, mediaSaturation]
   );
 
-  const handleVideoError = useCallback((message: string) => {
-    setMediaError(message);
-    setMediaSource(null);
-  }, []);
-
-  const content: ReactNode = mediaSource ? (
-    mediaSource.type === "video" ? (
-      <UploadedVideo
-        src={mediaSource.src}
-        mouseParallax={mouseParallax}
-        parallaxIntensity={parallaxIntensity}
-        adjustments={mediaAdjustments}
-        onPlaybackError={handleVideoError}
-      />
-    ) : (
-      <UploadedImage
-        src={mediaSource.src}
-        mouseParallax={mouseParallax}
-        parallaxIntensity={parallaxIntensity}
-        adjustments={mediaAdjustments}
-      />
-    )
-  ) : (
-    <FloatingTorus
-      mouseParallax={mouseParallax}
-      parallaxIntensity={parallaxIntensity}
-    />
-  );
+  const { postProcessing: asciiPostProcessing, ...asciiBase } = asciiSettings;
 
   return (
-    <Canvas camera={{ position: [0, 0, CAMERA_DISTANCE], fov: 50 }}>
-      <AsciiScene settings={asciiSettings}>{content}</AsciiScene>
-      <OrbitControls enablePan={false} />
-    </Canvas>
+    <Efecto
+      {...asciiBase}
+      postProcessing={asciiPostProcessing}
+      src={mediaSource?.src}
+      mediaType={mediaSource?.type}
+      mouseParallax={mouseParallax}
+      parallaxIntensity={parallaxIntensity}
+      cameraDistance={CAMERA_DISTANCE}
+      showOrbitControls
+      mediaAdjustments={mediaAdjustments}
+    />
   );
 }
 

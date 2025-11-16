@@ -1,8 +1,8 @@
 // Core exports
 export { default as Efecto } from "@/components/Efecto";
 
+// Misc exports
 export {
-  AsciiScene,
   buildAsciiEffectProps,
   type AsciiBaseProps,
 } from "@/components/AsciiScene";
@@ -12,9 +12,3 @@ export {
   type AsciiStyle,
   type PublicAsciiPostProcessingSettings,
 } from "@/components/AsciiEffect";
-
-export { default as FloatingTorus } from "@/components/FloatingTorus";
-
-export { default as UploadedImage } from "@/components/UploadedImage";
-export { default as UploadedVideo } from "@/components/UploadedVideo";
-export type { MediaAdjustments } from "@/components/mediaAdjustments";

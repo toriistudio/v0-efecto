@@ -65,6 +65,11 @@ export default function ImageUploadControl({
     mediaSelectionStore.getSnapshot
   );
 
+  const VIDEO_EXTENSIONS = useMemo(
+    () => [".mp4", ".webm", ".ogg", ".ogv", ".mov", ".m4v"],
+    []
+  );
+
   const handleFileChange = (event: ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     if (!file) {
@@ -79,7 +84,11 @@ export default function ImageUploadControl({
     const objectUrl = URL.createObjectURL(file);
     uploadedUrlRef.current = objectUrl;
 
-    const isVideo = file.type.startsWith("video/");
+    const lowerName = file.name?.toLowerCase() ?? "";
+    const hasVideoExtension = VIDEO_EXTENSIONS.some((ext) =>
+      lowerName.endsWith(ext)
+    );
+    const isVideo = file.type.startsWith("video/") || hasVideoExtension;
     onSelectMedia({ src: objectUrl, type: isVideo ? "video" : "image" });
   };
 
