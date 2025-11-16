@@ -155,7 +155,7 @@ const ASCII_CONTROL_SCHEMA = {
     step: 0.01,
     folder: "Mouse Parallax",
   },
-  postProcessingPreset: {
+  preset: {
     type: "select" as const,
     value: "none",
     options: POST_PROCESSING_PRESET_OPTIONS,
@@ -398,18 +398,9 @@ function AsciiPlaygroundCanvas() {
         props: {
           ...asciiProps,
           mediaAdjustments: {
-            brightness:
-              typeof values.mediaBrightness === "number"
-                ? values.mediaBrightness
-                : 1,
-            contrast:
-              typeof values.mediaContrast === "number"
-                ? values.mediaContrast
-                : 1,
-            saturation:
-              typeof values.mediaSaturation === "number"
-                ? values.mediaSaturation
-                : 1,
+            brightness: values.brightness,
+            contrast: values.contrast,
+            saturation: values.saturation,
           },
           mouseParallax: values.mouseParallax ?? false,
           parallaxIntensity:
@@ -467,7 +458,7 @@ function AsciiPlaygroundCanvas() {
   } = controlsResult;
 
   const {
-    postProcessingPreset = "none",
+    preset: postProcessingPreset = "none",
     mouseParallax = false,
     parallaxIntensity = 0.5,
     brightness: mediaBrightness = 1,
