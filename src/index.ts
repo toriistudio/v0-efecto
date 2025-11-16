@@ -22,3 +22,4 @@ export {
 
 export { default as UploadedImage } from "@/components/UploadedImage";
 export { default as UploadedVideo } from "@/components/UploadedVideo";
+export type { MediaAdjustments } from "@/components/mediaAdjustments";

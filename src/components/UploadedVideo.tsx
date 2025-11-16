@@ -4,13 +4,24 @@ import { useEffect, useMemo, useRef, useState } from "react";
 
 import { useFrame, useThree } from "@react-three/fiber";
 import { useVideoTexture } from "@react-three/drei";
-import { Mesh } from "three";
+import { DoubleSide, Mesh, ShaderMaterial, Texture, Vector2 } from "three";
+
+import {
+  resolveMediaAdjustments,
+  MEDIA_ADJUSTMENT_DEFAULTS,
+  type MediaAdjustments,
+} from "@/components/mediaAdjustments";
+import {
+  MEDIA_ADJUST_FRAGMENT_SHADER,
+  MEDIA_ADJUST_VERTEX_SHADER,
+} from "@/shaders/mediaAdjustments";
 
 type UploadedVideoProps = {
   src: string;
   mouseParallax?: boolean;
   parallaxIntensity?: number;
   onPlaybackError?: (message: string) => void;
+  adjustments?: MediaAdjustments;
 };
 
 export default function UploadedVideo({
@@ -18,6 +29,7 @@ export default function UploadedVideo({
   mouseParallax = false,
   parallaxIntensity = 0.5,
   onPlaybackError,
+  adjustments,
 }: UploadedVideoProps) {
   const texture = useVideoTexture(src, {
     autoplay: true,
@@ -29,6 +41,7 @@ export default function UploadedVideo({
   });
 
   const meshRef = useRef<Mesh>(null);
+  const materialRef = useRef<ShaderMaterial | null>(null);
   const viewport = useThree((state) => state.viewport);
   const [aspect, setAspect] = useState(16 / 9);
 
@@ -95,6 +108,43 @@ export default function UploadedVideo({
     };
   }, [texture, onPlaybackError]);
 
+  const shaderUniforms = useMemo(
+    () => ({
+      map: { value: null as Texture | null },
+      brightness: { value: MEDIA_ADJUSTMENT_DEFAULTS.brightness },
+      contrast: { value: MEDIA_ADJUSTMENT_DEFAULTS.contrast },
+      saturation: { value: MEDIA_ADJUSTMENT_DEFAULTS.saturation },
+      uvScale: { value: new Vector2(1, 1) },
+      uvOffset: { value: new Vector2(0, 0) },
+    }),
+    []
+  );
+
+  useEffect(() => {
+    shaderUniforms.map.value = texture;
+    if (materialRef.current) {
+      materialRef.current.uniforms.map.value = texture;
+    }
+  }, [shaderUniforms, texture]);
+
+  const resolvedAdjustments = useMemo(
+    () => resolveMediaAdjustments(adjustments),
+    [adjustments]
+  );
+
+  const { brightness, contrast, saturation } = resolvedAdjustments;
+
+  useEffect(() => {
+    shaderUniforms.brightness.value = brightness;
+    shaderUniforms.contrast.value = contrast;
+    shaderUniforms.saturation.value = saturation;
+    if (materialRef.current) {
+      materialRef.current.uniforms.brightness.value = brightness;
+      materialRef.current.uniforms.contrast.value = contrast;
+      materialRef.current.uniforms.saturation.value = saturation;
+    }
+  }, [brightness, contrast, saturation, shaderUniforms]);
+
   const { width: viewWidth, height: viewHeight } = viewport;
   const { width, height } = useMemo(() => {
     const viewportRatio = viewWidth / viewHeight;
@@ -110,6 +160,45 @@ export default function UploadedVideo({
     const planeWidth = planeHeight * videoRatio;
     return { width: planeWidth, height: planeHeight };
   }, [aspect, viewHeight, viewWidth]);
+
+  useEffect(() => {
+    const videoEl = texture.image as HTMLVideoElement | undefined;
+    const textureAspect =
+      videoEl && videoEl.videoHeight > 0
+        ? videoEl.videoWidth / videoEl.videoHeight
+        : aspect;
+
+    if (!textureAspect || width === 0 || height === 0) {
+      return;
+    }
+
+    const planeAspect = width / height;
+    let scaleX = 1;
+    let scaleY = 1;
+
+    if (textureAspect > planeAspect) {
+      scaleX = textureAspect / planeAspect;
+    } else {
+      scaleY = planeAspect / textureAspect;
+    }
+
+    const uvScaleX = 1 / scaleX;
+    const uvScaleY = 1 / scaleY;
+    const offsetX = (1 - uvScaleX) * 0.5;
+    const offsetY = (1 - uvScaleY) * 0.5;
+    shaderUniforms.uvScale.value.set(uvScaleX, uvScaleY);
+    shaderUniforms.uvOffset.value.set(offsetX, offsetY);
+    if (materialRef.current) {
+      (materialRef.current.uniforms.uvScale.value as Vector2).set(
+        uvScaleX,
+        uvScaleY
+      );
+      (materialRef.current.uniforms.uvOffset.value as Vector2).set(
+        offsetX,
+        offsetY
+      );
+    }
+  }, [aspect, height, shaderUniforms, texture, width]);
 
   useFrame((state) => {
     if (!meshRef.current) {
@@ -130,7 +219,15 @@ export default function UploadedVideo({
   return (
     <mesh ref={meshRef}>
       <planeGeometry args={[width, height]} />
-      <meshBasicMaterial map={texture} toneMapped={false} side={2} />
+      <shaderMaterial
+        ref={materialRef}
+        uniforms={shaderUniforms}
+        vertexShader={MEDIA_ADJUST_VERTEX_SHADER}
+        fragmentShader={MEDIA_ADJUST_FRAGMENT_SHADER}
+        toneMapped={false}
+        transparent
+        side={DoubleSide}
+      />
     </mesh>
   );
 }

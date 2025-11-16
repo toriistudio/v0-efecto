@@ -107,11 +107,11 @@ const POST_PROCESSING_PRESET_OPTIONS: Record<PostProcessingPresetKey, string> =
   };
 
 const COLOR_PALETTE_OPTIONS = {
-  Original: "original",
-  Green: "green",
-  Amber: "amber",
-  Cyan: "cyan",
-  Blue: "blue",
+  original: "original",
+  green: "green",
+  amber: "amber",
+  cyan: "cyan",
+  blue: "blue",
 };
 
 const ASCII_EFFECT_BASE_PROPS: AsciiBaseProps = {
@@ -344,6 +344,30 @@ const ASCII_CONTROL_SCHEMA = {
     step: 0.01,
     folder: "Color",
   },
+  brightness: {
+    type: "number" as const,
+    value: 1,
+    min: 0,
+    max: 2,
+    step: 0.1,
+    folder: "Media",
+  },
+  contrast: {
+    type: "number" as const,
+    value: 1,
+    min: 0,
+    max: 2,
+    step: 0.1,
+    folder: "Media",
+  },
+  saturation: {
+    type: "number" as const,
+    value: 1,
+    min: 0,
+    max: 2,
+    step: 0.1,
+    folder: "Media",
+  },
 } as const;
 
 type MediaState = UploadedMedia | null;
@@ -378,6 +402,19 @@ function AsciiPlaygroundCanvas() {
       if (mediaSource?.src) {
         props.src = mediaSource.src;
       }
+
+      props.mediaAdjustments = {
+        brightness:
+          typeof values.mediaBrightness === "number"
+            ? values.mediaBrightness
+            : 1,
+        contrast:
+          typeof values.mediaContrast === "number" ? values.mediaContrast : 1,
+        saturation:
+          typeof values.mediaSaturation === "number"
+            ? values.mediaSaturation
+            : 1,
+      };
 
       return jsonToComponentString({
         componentName: "Efecto",
@@ -436,11 +473,17 @@ function AsciiPlaygroundCanvas() {
     postProcessingPreset = "none",
     mouseParallax = false,
     parallaxIntensity = 0.5,
+    brightness: mediaBrightness = 1,
+    contrast: mediaContrast = 1,
+    saturation: mediaSaturation = 1,
     ...asciiControlValues
   } = controlValues as typeof controlValues & {
     postProcessingPreset?: PostProcessingPresetKey;
     mouseParallax?: boolean;
     parallaxIntensity?: number;
+    mediaBrightness?: number;
+    mediaContrast?: number;
+    mediaSaturation?: number;
   };
 
   const setValueRef = useRef(setValue);
@@ -477,6 +520,15 @@ function AsciiPlaygroundCanvas() {
     ASCII_EFFECT_BASE_PROPS
   );
 
+  const mediaAdjustments = useMemo(
+    () => ({
+      brightness: mediaBrightness,
+      contrast: mediaContrast,
+      saturation: mediaSaturation,
+    }),
+    [mediaBrightness, mediaContrast, mediaSaturation]
+  );
+
   const handleVideoError = useCallback((message: string) => {
     setMediaError(message);
     setMediaSource(null);
@@ -488,6 +540,7 @@ function AsciiPlaygroundCanvas() {
         src={mediaSource.src}
         mouseParallax={mouseParallax}
         parallaxIntensity={parallaxIntensity}
+        adjustments={mediaAdjustments}
         onPlaybackError={handleVideoError}
       />
     ) : (
@@ -495,6 +548,7 @@ function AsciiPlaygroundCanvas() {
         src={mediaSource.src}
         mouseParallax={mouseParallax}
         parallaxIntensity={parallaxIntensity}
+        adjustments={mediaAdjustments}
       />
     )
   ) : (

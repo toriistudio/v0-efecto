@@ -11,6 +11,7 @@ import {
 import FloatingTorus from "@/components/FloatingTorus";
 import UploadedImage from "@/components/UploadedImage";
 import UploadedVideo from "@/components/UploadedVideo";
+import { type MediaAdjustments } from "@/components/mediaAdjustments";
 
 const VIDEO_EXTENSIONS = [
   ".mp4",
@@ -78,6 +79,7 @@ export type EfectoProps = Partial<AsciiBaseProps> & {
   parallaxIntensity?: number;
   cameraDistance?: number;
   showOrbitControls?: boolean;
+  mediaAdjustments?: MediaAdjustments;
 };
 
 export default function Efecto({
@@ -91,6 +93,7 @@ export default function Efecto({
   parallaxIntensity = 0.5,
   cameraDistance = 5,
   showOrbitControls = false,
+  mediaAdjustments,
 }: EfectoProps) {
   const asciiSettings = {
     cellSize,
@@ -118,12 +121,14 @@ export default function Efecto({
           src={src}
           mouseParallax={mouseParallax}
           parallaxIntensity={parallaxIntensity}
+          adjustments={mediaAdjustments}
         />
       ) : (
         <UploadedImage
           src={src}
           mouseParallax={mouseParallax}
           parallaxIntensity={parallaxIntensity}
+          adjustments={mediaAdjustments}
         />
       );
   }
