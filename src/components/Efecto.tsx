@@ -12,6 +12,32 @@ import FloatingTorus from "@/components/FloatingTorus";
 import UploadedImage from "@/components/UploadedImage";
 import UploadedVideo from "@/components/UploadedVideo";
 
+const VIDEO_EXTENSIONS = [
+  ".mp4",
+  ".webm",
+  ".ogg",
+  ".ogv",
+  ".mov",
+  ".m4v",
+] as const;
+
+const inferMediaType = (source?: string): "image" | "video" => {
+  if (!source) {
+    return "image";
+  }
+
+  try {
+    const url = new URL(source);
+    source = url.pathname;
+  } catch {
+    // Ignore parsing errors for relative/data URIs.
+  }
+
+  const sanitized = source.split("?")[0]?.split("#")[0]?.toLowerCase() ?? "";
+  const isVideo = VIDEO_EXTENSIONS.some((ext) => sanitized.endsWith(ext));
+  return isVideo ? "video" : "image";
+};
+
 const DEFAULT_ASCII_BASE: AsciiBaseProps = {
   cellSize: 6,
   invert: false,
@@ -48,7 +74,6 @@ const DEFAULT_POST_PROCESSING: PublicAsciiPostProcessingSettings = {
 export type EfectoProps = Partial<AsciiBaseProps> & {
   postProcessing?: Partial<PublicAsciiPostProcessingSettings>;
   src?: string;
-  mediaType?: "image" | "video";
   mouseParallax?: boolean;
   parallaxIntensity?: number;
   cameraDistance?: number;
@@ -62,7 +87,6 @@ export default function Efecto({
   style = DEFAULT_ASCII_BASE.style,
   postProcessing,
   src,
-  mediaType = "image",
   mouseParallax = false,
   parallaxIntensity = 0.5,
   cameraDistance = 5,
@@ -87,8 +111,9 @@ export default function Efecto({
   );
 
   if (src) {
+    const resolvedMediaType = inferMediaType(src);
     content =
-      mediaType === "video" ? (
+      resolvedMediaType === "video" ? (
         <UploadedVideo
           src={src}
           mouseParallax={mouseParallax}

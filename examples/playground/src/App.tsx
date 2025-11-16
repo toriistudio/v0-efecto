@@ -377,7 +377,6 @@ function AsciiPlaygroundCanvas() {
 
       if (mediaSource?.src) {
         props.src = mediaSource.src;
-        props.mediaType = mediaSource.type;
       }
 
       return jsonToComponentString({
