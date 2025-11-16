@@ -1,6 +1,15 @@
 "use client";
 
-import { useEffect, useId, useMemo, useRef, type ChangeEvent } from "react";
+import {
+  useEffect,
+  useId,
+  useMemo,
+  useRef,
+  useSyncExternalStore,
+  type ChangeEvent,
+} from "react";
+
+import { mediaSelectionStore } from "../state/mediaSelectionStore";
 
 type MediaType = "image" | "video";
 export type UploadedMedia = {
@@ -38,21 +47,23 @@ const PRESET_MEDIA: PresetEntry[] = [
 ];
 
 type ImageUploadControlProps = {
-  media: UploadedMedia | null;
   onSelectMedia: (media: UploadedMedia) => void;
   onClear: () => void;
-  error?: string | null;
 };
 
 export default function ImageUploadControl({
-  media,
   onSelectMedia,
   onClear,
-  error,
 }: ImageUploadControlProps) {
   const inputId = useId();
   const inputRef = useRef<HTMLInputElement | null>(null);
   const uploadedUrlRef = useRef<string | null>(null);
+
+  const { media, error } = useSyncExternalStore(
+    mediaSelectionStore.subscribe,
+    mediaSelectionStore.getSnapshot,
+    mediaSelectionStore.getSnapshot
+  );
 
   const handleFileChange = (event: ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
@@ -153,10 +164,10 @@ export default function ImageUploadControl({
             {media.type === "video" ? (
               <video
                 src={media.src}
-                autoPlay
+                autoPlay={false}
                 loop
                 muted
-                playsInline
+                playsInline={false}
                 style={{
                   width: "100%",
                   height: "100%",
@@ -193,9 +204,9 @@ export default function ImageUploadControl({
               style={{
                 width: "100%",
                 borderRadius: "0.4rem",
-                border: isSelected
-                  ? "2px solid rgba(255,255,255,0.8)"
-                  : "1px solid rgba(255,255,255,0.25)",
+                border: "1px solid rgba(255,255,255,0.25)",
+                outline: isSelected ? "2px solid #fff" : "none",
+                outlineOffset: 2,
                 padding: 0,
                 overflow: "hidden",
                 background: "transparent",
@@ -234,54 +245,6 @@ export default function ImageUploadControl({
       </div>
       {error ? (
         <p style={{ color: "#ff9da4", fontSize: "0.8rem" }}>{error}</p>
-      ) : null}
-      {media ? (
-        <>
-          {media.type === "video" ? (
-            <video
-              src={media.src}
-              controls
-              autoPlay
-              loop
-              muted
-              playsInline
-              style={{
-                width: "100%",
-                maxHeight: 200,
-                borderRadius: "0.5rem",
-                border: "1px solid rgba(255, 255, 255, 0.15)",
-                objectFit: "cover",
-                backgroundColor: "black",
-              }}
-            />
-          ) : (
-            <img
-              src={media.src}
-              alt="Uploaded preview"
-              style={{
-                width: "100%",
-                maxHeight: 200,
-                objectFit: "contain",
-                borderRadius: "0.5rem",
-                border: "1px solid rgba(255, 255, 255, 0.15)",
-              }}
-            />
-          )}
-          <button
-            type="button"
-            onClick={handleClear}
-            style={{
-              padding: "0.35rem 0.75rem",
-              borderRadius: "0.4rem",
-              border: "1px solid rgba(255, 255, 255, 0.25)",
-              background: "rgba(255, 255, 255, 0.08)",
-              color: "inherit",
-              cursor: "pointer",
-            }}
-          >
-            Remove media
-          </button>
-        </>
       ) : null}
     </div>
   );

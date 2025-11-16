@@ -15,11 +15,6 @@ export {
 
 export { default as FloatingTorus } from "@/components/FloatingTorus";
 
-export {
-  default as ImageUploadControl,
-  type UploadedMedia,
-} from "@/components/ImageUploadControl";
-
 export { default as UploadedImage } from "@/components/UploadedImage";
 export { default as UploadedVideo } from "@/components/UploadedVideo";
 export type { MediaAdjustments } from "@/components/mediaAdjustments";

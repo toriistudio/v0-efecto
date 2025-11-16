@@ -6,20 +6,22 @@ import type { ReactNode } from "react";
 import { Canvas } from "@react-three/fiber";
 import { OrbitControls } from "@react-three/drei";
 import { Playground, useControls } from "@toriistudio/v0-playground";
-
 import {
   ASCII_POST_PROCESSING_DEFAULTS,
   AsciiScene,
   FloatingTorus,
   buildAsciiEffectProps,
-  ImageUploadControl,
   UploadedImage,
   UploadedVideo,
   type AsciiStyle,
-  type UploadedMedia,
   type AsciiBaseProps,
   type PublicAsciiPostProcessingSettings,
 } from "@toriistudio/v0-efecto";
+
+import ImageUploadControl, {
+  type UploadedMedia,
+} from "./components/ImageUploadControl";
+import { mediaSelectionStore } from "./state/mediaSelectionStore";
 
 const CAMERA_DISTANCE = 5;
 
@@ -376,6 +378,13 @@ function AsciiPlaygroundCanvas() {
   const [mediaSource, setMediaSource] = useState<MediaState>(null);
   const [mediaError, setMediaError] = useState<string | null>(null);
 
+  useEffect(() => {
+    mediaSelectionStore.setSnapshot({
+      media: mediaSource,
+      error: mediaError,
+    });
+  }, [mediaSource, mediaError]);
+
   const handleSelectMedia = useCallback((media: UploadedMedia) => {
     setMediaError(null);
     setMediaSource(media);
@@ -432,10 +441,8 @@ function AsciiPlaygroundCanvas() {
           folder: "Input Source",
           render: () => (
             <ImageUploadControl
-              media={mediaSource}
               onSelectMedia={handleSelectMedia}
               onClear={handleClear}
-              error={mediaError}
             />
           ),
         },
