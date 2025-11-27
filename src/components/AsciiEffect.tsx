@@ -6,7 +6,7 @@ import { BlendFunction, Effect } from "postprocessing";
 import { Uniform, Vector2 } from "three";
 import type { WebGLRenderer, WebGLRenderTarget } from "three";
 
-import fragmentShader from "@/shaders/fragment";
+import fragmentShader from "@/shaders/ascii/fragment";
 
 const DEFAULT_RESOLUTION = new Vector2(1920, 1080);
 const DEFAULT_MOUSE_POSITION = new Vector2(0, 0);
