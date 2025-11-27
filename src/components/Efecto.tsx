@@ -1,5 +1,7 @@
 "use client";
 
+import { useState } from "react";
+
 import { Canvas } from "@react-three/fiber";
 import { OrbitControls } from "@react-three/drei";
 
@@ -8,6 +10,11 @@ import {
   ASCII_POST_PROCESSING_DEFAULTS,
   type PublicAsciiPostProcessingSettings,
 } from "@/components/AsciiEffect";
+import {
+  DitherCanvasOverlay,
+  DEFAULT_DITHER_SETTINGS,
+} from "@/components/DitherEffect";
+import { DitherScene, type DitherBaseProps } from "@/components/DitherScene";
 import FloatingTorus from "@/components/FloatingTorus";
 import MediaImage from "@/components/MediaImage";
 import MediaVideo from "@/components/MediaVideo";
@@ -72,7 +79,14 @@ const DEFAULT_POST_PROCESSING: PublicAsciiPostProcessingSettings = {
   contrastAdjust: ASCII_POST_PROCESSING_DEFAULTS.contrastAdjust,
 };
 
+const DEFAULT_DITHER_BASE: DitherBaseProps = {
+  ...DEFAULT_DITHER_SETTINGS,
+};
+
+type EffectMode = "ascii" | "dither";
+
 export type EfectoProps = Partial<AsciiBaseProps> & {
+  mode?: EffectMode;
   postProcessing?: Partial<PublicAsciiPostProcessingSettings>;
   src?: string;
   mediaType?: "image" | "video";
@@ -81,9 +95,11 @@ export type EfectoProps = Partial<AsciiBaseProps> & {
   cameraDistance?: number;
   showOrbitControls?: boolean;
   mediaAdjustments?: MediaAdjustments;
+  dither?: Partial<DitherBaseProps>;
 };
 
 export default function Efecto({
+  mode = "ascii",
   cellSize = DEFAULT_ASCII_BASE.cellSize,
   invert = DEFAULT_ASCII_BASE.invert,
   colorMode = DEFAULT_ASCII_BASE.colorMode,
@@ -96,7 +112,10 @@ export default function Efecto({
   cameraDistance = 5,
   showOrbitControls = false,
   mediaAdjustments,
+  dither,
 }: EfectoProps) {
+  const [canvasElement, setCanvasElement] = useState<HTMLCanvasElement | null>(null);
+
   const asciiSettings = {
     cellSize,
     invert,
@@ -135,14 +154,48 @@ export default function Efecto({
       );
   }
 
+  const resolvedDitherSettings = {
+    ...DEFAULT_DITHER_BASE,
+    ...dither,
+  };
+
+  const isDither = mode === "dither";
+
   return (
-    <Canvas
-      camera={{ position: [0, 0, cameraDistance], fov: 50 }}
-      gl={{ alpha: true }}
-      style={{ background: "transparent" }}
-    >
-      <AsciiScene settings={asciiSettings}>{content}</AsciiScene>
-      {showOrbitControls ? <OrbitControls enablePan={false} /> : null}
-    </Canvas>
+    <div style={{ position: "relative", width: "100%", height: "100%" }}>
+      <Canvas
+        key={isDither ? "dither" : "ascii"}
+        camera={{ position: [0, 0, cameraDistance], fov: 50 }}
+        gl={{ alpha: true, preserveDrawingBuffer: isDither }}
+        style={{
+          background: "transparent",
+          opacity: isDither ? 0 : 1,
+          width: "100%",
+          height: "100%",
+        }}
+        onCreated={({ gl }) => {
+          setCanvasElement(gl.domElement);
+        }}
+      >
+        {isDither ? (
+          <DitherScene>{content}</DitherScene>
+        ) : (
+          <AsciiScene settings={asciiSettings}>{content}</AsciiScene>
+        )}
+        {showOrbitControls ? <OrbitControls enablePan={false} /> : null}
+      </Canvas>
+      {isDither ? (
+        <DitherCanvasOverlay
+          source={canvasElement ?? undefined}
+          settings={resolvedDitherSettings}
+          style={{
+            position: "absolute",
+            inset: 0,
+            width: "100%",
+            height: "100%",
+          }}
+        />
+      ) : null}
+    </div>
   );
 }

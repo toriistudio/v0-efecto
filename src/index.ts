@@ -12,3 +12,14 @@ export {
   type AsciiStyle,
   type PublicAsciiPostProcessingSettings,
 } from "@/components/AsciiEffect";
+
+export {
+  buildDitherEffectProps,
+  type DitherBaseProps,
+} from "@/components/DitherScene";
+
+export {
+  DEFAULT_DITHER_SETTINGS,
+  type DitherEffectSettings,
+  type ErrorDiffusionPattern,
+} from "@/components/DitherEffect";

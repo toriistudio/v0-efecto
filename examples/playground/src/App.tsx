@@ -1,15 +1,21 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import type { ReactNode } from "react";
-import { Playground, useControls } from "@toriistudio/v0-playground";
+import {
+  Playground,
+  useControls,
+  type ControlsSchema,
+} from "@toriistudio/v0-playground";
 import {
   Efecto,
   ASCII_POST_PROCESSING_DEFAULTS,
   buildAsciiEffectProps,
+  buildDitherEffectProps,
   type AsciiStyle,
   type AsciiBaseProps,
+  type DitherBaseProps,
   type PublicAsciiPostProcessingSettings,
+  DEFAULT_DITHER_SETTINGS,
 } from "@toriistudio/v0-efecto";
 
 import ImageUploadControl, {
@@ -27,12 +33,45 @@ type CopyButtonHandlerArgs = {
   }) => string;
 };
 
+const EFFECT_OPTIONS = {
+  ascii: "ASCII",
+  dither: "Dither",
+} as const;
+
 const STYLE_OPTIONS: Record<AsciiStyle, string> = {
   standard: "Standard",
   dense: "Dense",
   minimal: "Minimal",
   blocks: "Blocks",
 };
+
+const DITHER_PATTERN_OPTIONS = {
+  floydSteinberg: "Floyd-Steinberg",
+  jarvisJudiceNinke: "Jarvis-Judice-Ninke",
+  stucki: "Stucki",
+  atkinson: "Atkinson",
+  burkes: "Burkes",
+  sierra: "Sierra",
+  twoRowSierra: "Two-Row Sierra",
+  sierraLite: "Sierra Lite",
+} as const;
+
+const DITHER_PALETTE_OPTIONS = {
+  monochrome: "Monochrome",
+  amber: "Amber",
+  cyan: "Cyan",
+  magenta: "Magenta",
+} as const;
+
+const DITHER_COLOR_PRESETS = {
+  monochrome: { color1: "#050505", color2: "#fafafa" },
+  amber: { color1: "#2b1700", color2: "#ffc46b" },
+  cyan: { color1: "#001a26", color2: "#9ce9ff" },
+  magenta: { color1: "#2a0028", color2: "#ffb3f5" },
+} as const satisfies Record<
+  keyof typeof DITHER_PALETTE_OPTIONS,
+  { color1: `#${string}`; color2: `#${string}` }
+>;
 
 const POST_PROCESSING_PRESETS = {
   none: {
@@ -116,6 +155,12 @@ const ASCII_EFFECT_BASE_PROPS: AsciiBaseProps = {
   colorMode: true,
   style: "standard",
 };
+
+const DITHER_EFFECT_BASE_PROPS: DitherBaseProps = {
+  ...DEFAULT_DITHER_SETTINGS,
+};
+
+type EffectMode = keyof typeof EFFECT_OPTIONS;
 
 const ASCII_CONTROL_SCHEMA = {
   style: {
@@ -366,11 +411,59 @@ const ASCII_CONTROL_SCHEMA = {
   },
 } as const;
 
+const DITHER_CONTROL_SCHEMA = {
+  ditherPattern: {
+    type: "select" as const,
+    value: DITHER_EFFECT_BASE_PROPS.pattern,
+    options: DITHER_PATTERN_OPTIONS,
+    folder: "Dither Settings",
+  },
+  ditherPixelation: {
+    type: "number" as const,
+    value: DITHER_EFFECT_BASE_PROPS.pixelation,
+    min: 1,
+    max: 8,
+    step: 1,
+    folder: "Dither Settings",
+  },
+  ditherContrast: {
+    type: "number" as const,
+    value: DITHER_EFFECT_BASE_PROPS.contrast,
+    min: 0.5,
+    max: 2,
+    step: 0.05,
+    folder: "Dither Settings",
+  },
+  ditherBrightness: {
+    type: "number" as const,
+    value: DITHER_EFFECT_BASE_PROPS.brightness,
+    min: 0.5,
+    max: 2,
+    step: 0.05,
+    folder: "Dither Settings",
+  },
+  ditherThreshold: {
+    type: "number" as const,
+    value: DITHER_EFFECT_BASE_PROPS.threshold,
+    min: 0.1,
+    max: 2,
+    step: 0.05,
+    folder: "Dither Settings",
+  },
+  ditherPalette: {
+    type: "select" as const,
+    value: "monochrome",
+    options: DITHER_PALETTE_OPTIONS,
+    folder: "Dither Settings",
+  },
+} as const;
+
 type MediaState = UploadedMedia | null;
 
 function AsciiPlaygroundCanvas() {
   const [mediaSource, setMediaSource] = useState<MediaState>(null);
   const [mediaError, setMediaError] = useState<string | null>(null);
+  const [effectMode, setEffectMode] = useState<EffectMode>("ascii");
 
   useEffect(() => {
     mediaSelectionStore.setSnapshot({
@@ -391,57 +484,116 @@ function AsciiPlaygroundCanvas() {
 
   const showCopyButtonFn = useCallback(
     ({ values, jsonToComponentString }: CopyButtonHandlerArgs) => {
-      const asciiProps = buildAsciiEffectProps(values, ASCII_EFFECT_BASE_PROPS);
+      const effectMode = (values.effectMode ??
+        "ascii") as keyof typeof EFFECT_OPTIONS;
+      const sharedProps = {
+        mediaAdjustments: {
+          brightness: values.brightness,
+          contrast: values.contrast,
+          saturation: values.saturation,
+        },
+        mouseParallax: values.mouseParallax ?? false,
+        parallaxIntensity:
+          typeof values.parallaxIntensity === "number"
+            ? values.parallaxIntensity
+            : 0.5,
+        src: "/your-image-or-video-url",
+      };
 
+      if (effectMode === "dither") {
+        const paletteKey = (values.ditherPalette ??
+          "monochrome") as keyof typeof DITHER_COLOR_PRESETS;
+        const { color1, color2 } =
+          DITHER_COLOR_PRESETS[paletteKey] ?? DITHER_COLOR_PRESETS.monochrome;
+        const ditherControls = {
+          pattern: values.ditherPattern,
+          pixelation: values.ditherPixelation,
+          contrast: values.ditherContrast,
+          brightness: values.ditherBrightness,
+          threshold: values.ditherThreshold,
+          color1,
+          color2,
+        };
+        const ditherProps = buildDitherEffectProps(
+          ditherControls,
+          DITHER_EFFECT_BASE_PROPS
+        );
+        return jsonToComponentString({
+          componentName: "Efecto",
+          props: {
+            mode: "dither",
+            dither: ditherProps,
+            ...sharedProps,
+          },
+        });
+      }
+
+      const asciiProps = buildAsciiEffectProps(values, ASCII_EFFECT_BASE_PROPS);
       return jsonToComponentString({
         componentName: "Efecto",
         props: {
           ...asciiProps,
-          mediaAdjustments: {
-            brightness: values.brightness,
-            contrast: values.contrast,
-            saturation: values.saturation,
-          },
-          mouseParallax: values.mouseParallax ?? false,
-          parallaxIntensity:
-            typeof values.parallaxIntensity === "number"
-              ? values.parallaxIntensity
-              : 0.5,
-          src: "/your-image-or-video-url",
+          ...sharedProps,
         },
       });
     },
     [mediaSource]
   );
 
-  const controlsSchema = useMemo(
-    () =>
-      ({
-        contentImage: {
-          type: "button" as const,
-          folder: "Input Source",
-          render: () => (
-            <ImageUploadControl
-              onSelectMedia={handleSelectMedia}
-              onClear={handleClear}
-            />
-          ),
-        },
-        ...ASCII_CONTROL_SCHEMA,
-      } as typeof ASCII_CONTROL_SCHEMA & {
-        contentImage: {
-          type: "button";
-          folder: string;
-          render: () => ReactNode;
-        };
-      }),
-    [handleClear, handleSelectMedia, mediaSource]
-  );
+  const controlsSchema = useMemo<ControlsSchema>(() => {
+    const schema: ControlsSchema = {
+      effectMode: {
+        type: "select",
+        value: effectMode,
+        options: EFFECT_OPTIONS,
+        folder: "Effect Mode",
+      },
+      contentImage: {
+        type: "button",
+        folder: "Input Source",
+        render: () => (
+          <ImageUploadControl
+            onSelectMedia={handleSelectMedia}
+            onClear={handleClear}
+          />
+        ),
+      },
+      ...DITHER_CONTROL_SCHEMA,
+      ...ASCII_CONTROL_SCHEMA,
+    };
+
+    const ditherFolders = new Set([
+      "Input Source",
+      "Mouse Parallax",
+      "Media",
+      "Dither Settings",
+    ]);
+    const isDitherMode = effectMode === "dither";
+
+    return Object.fromEntries(
+      Object.entries(schema).map(([key, control]) => {
+        if (key === "effectMode") {
+          return [key, { ...control, hidden: false }];
+        }
+
+        if (!isDitherMode) {
+          return [
+            key,
+            { ...control, hidden: control.folder === "Dither Settings" },
+          ];
+        }
+
+        const folder = control.folder;
+        const hidden = !folder || !ditherFolders.has(folder);
+        return [key, { ...control, hidden }];
+      })
+    ) as ControlsSchema;
+  }, [effectMode, handleClear, handleSelectMedia]);
 
   const controlsResult = useControls(controlsSchema, {
-    componentName: "AsciiEffect",
+    componentName: "Efecto",
     config: {
-      mainLabel: "ASCII Controls",
+      mainLabel: "Controls",
       showGrid: false,
       showCopyButton: false,
       showCodeSnippet: true,
@@ -454,8 +606,19 @@ function AsciiPlaygroundCanvas() {
     controls: _controlsMeta,
     schema: _schema,
     jsx: _jsx,
-    ...controlValues
+    ...rawControlValues
   } = controlsResult;
+
+  const { effectMode: formEffectMode = "ascii", ...controlValues } =
+    rawControlValues as typeof rawControlValues & {
+      effectMode?: EffectMode;
+    };
+
+  useEffect(() => {
+    if (formEffectMode !== effectMode) {
+      setEffectMode(formEffectMode);
+    }
+  }, [formEffectMode, effectMode]);
 
   const {
     preset: postProcessingPreset = "none",
@@ -464,6 +627,12 @@ function AsciiPlaygroundCanvas() {
     brightness: mediaBrightness = 1,
     contrast: mediaContrast = 1,
     saturation: mediaSaturation = 1,
+    ditherPattern = DITHER_EFFECT_BASE_PROPS.pattern,
+    ditherPixelation = DITHER_EFFECT_BASE_PROPS.pixelation,
+    ditherContrast = DITHER_EFFECT_BASE_PROPS.contrast,
+    ditherBrightness = DITHER_EFFECT_BASE_PROPS.brightness,
+    ditherThreshold = DITHER_EFFECT_BASE_PROPS.threshold,
+    ditherPalette = "monochrome",
     ...asciiControlValues
   } = controlValues as typeof controlValues & {
     postProcessingPreset?: PostProcessingPresetKey;
@@ -472,6 +641,12 @@ function AsciiPlaygroundCanvas() {
     mediaBrightness?: number;
     mediaContrast?: number;
     mediaSaturation?: number;
+    ditherPattern?: keyof typeof DITHER_PATTERN_OPTIONS;
+    ditherPixelation?: number;
+    ditherContrast?: number;
+    ditherBrightness?: number;
+    ditherThreshold?: number;
+    ditherPalette?: keyof typeof DITHER_PALETTE_OPTIONS;
   };
 
   const setValueRef = useRef(setValue);
@@ -508,6 +683,25 @@ function AsciiPlaygroundCanvas() {
     ASCII_EFFECT_BASE_PROPS
   );
 
+  const ditherPaletteColors =
+    DITHER_COLOR_PRESETS[ditherPalette as keyof typeof DITHER_COLOR_PRESETS] ??
+    DITHER_COLOR_PRESETS.monochrome;
+
+  const ditherControls = {
+    pattern: ditherPattern,
+    pixelation: ditherPixelation,
+    contrast: ditherContrast,
+    brightness: ditherBrightness,
+    threshold: ditherThreshold,
+    color1: ditherPaletteColors.color1,
+    color2: ditherPaletteColors.color2,
+  };
+
+  const ditherSettings = buildDitherEffectProps(
+    ditherControls,
+    DITHER_EFFECT_BASE_PROPS
+  );
+
   const mediaAdjustments = useMemo(
     () => ({
       brightness: mediaBrightness,
@@ -518,11 +712,22 @@ function AsciiPlaygroundCanvas() {
   );
 
   const { postProcessing: asciiPostProcessing, ...asciiBase } = asciiSettings;
+  const resolvedMode = formEffectMode === "dither" ? "dither" : "ascii";
+
+  const modeSpecificProps =
+    resolvedMode === "ascii"
+      ? {
+          ...asciiBase,
+          postProcessing: asciiPostProcessing,
+        }
+      : {
+          dither: ditherSettings,
+        };
 
   return (
     <Efecto
-      {...asciiBase}
-      postProcessing={asciiPostProcessing}
+      {...modeSpecificProps}
+      mode={resolvedMode}
       src={mediaSource?.src}
       mediaType={mediaSource?.type}
       mouseParallax={mouseParallax}
