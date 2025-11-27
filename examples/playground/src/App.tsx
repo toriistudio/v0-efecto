@@ -443,7 +443,7 @@ function AsciiPlaygroundCanvas() {
     config: {
       mainLabel: "ASCII Controls",
       showGrid: false,
-      showCopyButton: true,
+      showCopyButton: false,
       showCodeSnippet: true,
       showCopyButtonFn,
     },
