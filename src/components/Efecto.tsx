@@ -85,6 +85,11 @@ const DEFAULT_DITHER_BASE: DitherBaseProps = {
 
 type EffectMode = "ascii" | "dither";
 
+export type VideoSettings = {
+  loop?: boolean;
+  playbackSpeed?: number;
+};
+
 export type EfectoProps = Partial<AsciiBaseProps> & {
   mode?: EffectMode;
   postProcessing?: Partial<PublicAsciiPostProcessingSettings>;
@@ -96,6 +101,7 @@ export type EfectoProps = Partial<AsciiBaseProps> & {
   showOrbitControls?: boolean;
   mediaAdjustments?: MediaAdjustments;
   dither?: Partial<DitherBaseProps>;
+  videoSettings?: VideoSettings;
 };
 
 export default function Efecto({
@@ -113,6 +119,7 @@ export default function Efecto({
   showOrbitControls = false,
   mediaAdjustments,
   dither,
+  videoSettings,
 }: EfectoProps) {
   const [canvasElement, setCanvasElement] = useState<HTMLCanvasElement | null>(null);
 
@@ -143,6 +150,8 @@ export default function Efecto({
           mouseParallax={mouseParallax}
           parallaxIntensity={parallaxIntensity}
           adjustments={mediaAdjustments}
+          loop={videoSettings?.loop}
+          playbackSpeed={videoSettings?.playbackSpeed}
         />
       ) : (
         <MediaImage

@@ -22,6 +22,8 @@ type MediaVideoProps = {
   parallaxIntensity?: number;
   onPlaybackError?: (message: string) => void;
   adjustments?: MediaAdjustments;
+  loop?: boolean;
+  playbackSpeed?: number;
 };
 
 export default function MediaVideo({
@@ -30,10 +32,12 @@ export default function MediaVideo({
   parallaxIntensity = 0.5,
   onPlaybackError,
   adjustments,
+  loop = true,
+  playbackSpeed = 1,
 }: MediaVideoProps) {
   const texture = useVideoTexture(src, {
     autoplay: true,
-    loop: true,
+    loop,
     muted: true,
     playsInline: true,
     start: true,
@@ -107,6 +111,16 @@ export default function MediaVideo({
       video.removeEventListener("error", handleError);
     };
   }, [texture, onPlaybackError]);
+
+  useEffect(() => {
+    const video = texture.image as HTMLVideoElement | undefined;
+    if (!video) {
+      return;
+    }
+    video.loop = loop;
+    const clampedPlayback = Math.min(Math.max(playbackSpeed, 0), 1);
+    video.playbackRate = clampedPlayback;
+  }, [loop, playbackSpeed, texture]);
 
   const shaderUniforms = useMemo(
     () => ({

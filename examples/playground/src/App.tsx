@@ -458,6 +458,22 @@ const DITHER_CONTROL_SCHEMA = {
   },
 } as const;
 
+const VIDEO_CONTROL_SCHEMA = {
+  videoLoop: {
+    type: "boolean" as const,
+    value: true,
+    folder: "Video Settings",
+  },
+  videoPlaybackSpeed: {
+    type: "number" as const,
+    value: 1,
+    min: 0,
+    max: 1,
+    step: 0.05,
+    folder: "Video Settings",
+  },
+} as const;
+
 type MediaState = UploadedMedia | null;
 
 function AsciiPlaygroundCanvas() {
@@ -486,6 +502,17 @@ function AsciiPlaygroundCanvas() {
     ({ values, jsonToComponentString }: CopyButtonHandlerArgs) => {
       const effectMode = (values.effectMode ??
         "ascii") as keyof typeof EFFECT_OPTIONS;
+      const videoSettings =
+        mediaSource?.type === "video"
+          ? {
+              loop: values.videoLoop ?? true,
+              playbackSpeed:
+                typeof values.videoPlaybackSpeed === "number"
+                  ? values.videoPlaybackSpeed
+                  : 1,
+            }
+          : undefined;
+
       const sharedProps = {
         mediaAdjustments: {
           brightness: values.brightness,
@@ -498,6 +525,7 @@ function AsciiPlaygroundCanvas() {
             ? values.parallaxIntensity
             : 0.5,
         src: "/your-image-or-video-url",
+        ...(videoSettings ? { videoSettings } : {}),
       };
 
       if (effectMode === "dither") {
@@ -560,6 +588,7 @@ function AsciiPlaygroundCanvas() {
       },
       ...DITHER_CONTROL_SCHEMA,
       ...ASCII_CONTROL_SCHEMA,
+      ...VIDEO_CONTROL_SCHEMA,
     };
 
     const ditherFolders = new Set([
@@ -567,8 +596,10 @@ function AsciiPlaygroundCanvas() {
       "Mouse Parallax",
       "Media",
       "Dither Settings",
+      "Video Settings",
     ]);
     const isDitherMode = effectMode === "dither";
+    const isVideoSelected = mediaSource?.type === "video";
 
     return Object.fromEntries(
       Object.entries(schema).map(([key, control]) => {
@@ -576,19 +607,26 @@ function AsciiPlaygroundCanvas() {
           return [key, { ...control, hidden: false }];
         }
 
+        const hideVideoSettings =
+          !isVideoSelected && control.folder === "Video Settings";
+
         if (!isDitherMode) {
           return [
             key,
-            { ...control, hidden: control.folder === "Dither Settings" },
+            {
+              ...control,
+              hidden:
+                control.folder === "Dither Settings" || hideVideoSettings,
+            },
           ];
         }
 
         const folder = control.folder;
-        const hidden = !folder || !ditherFolders.has(folder);
+        const hidden = hideVideoSettings || !folder || !ditherFolders.has(folder);
         return [key, { ...control, hidden }];
       })
     ) as ControlsSchema;
-  }, [effectMode, handleClear, handleSelectMedia]);
+  }, [effectMode, handleClear, handleSelectMedia, mediaSource]);
 
   const controlsResult = useControls(controlsSchema, {
     componentName: "Efecto",
@@ -633,6 +671,8 @@ function AsciiPlaygroundCanvas() {
     ditherBrightness = DITHER_EFFECT_BASE_PROPS.brightness,
     ditherThreshold = DITHER_EFFECT_BASE_PROPS.threshold,
     ditherPalette = "monochrome",
+    videoLoop = true,
+    videoPlaybackSpeed = 1,
     ...asciiControlValues
   } = controlValues as typeof controlValues & {
     postProcessingPreset?: PostProcessingPresetKey;
@@ -647,6 +687,8 @@ function AsciiPlaygroundCanvas() {
     ditherBrightness?: number;
     ditherThreshold?: number;
     ditherPalette?: keyof typeof DITHER_PALETTE_OPTIONS;
+    videoLoop?: boolean;
+    videoPlaybackSpeed?: number;
   };
 
   const setValueRef = useRef(setValue);
@@ -711,6 +753,17 @@ function AsciiPlaygroundCanvas() {
     [mediaBrightness, mediaContrast, mediaSaturation]
   );
 
+  const videoSettings = useMemo(
+    () =>
+      mediaSource?.type === "video"
+        ? {
+            loop: videoLoop,
+            playbackSpeed: videoPlaybackSpeed,
+          }
+        : undefined,
+    [mediaSource, videoLoop, videoPlaybackSpeed]
+  );
+
   const { postProcessing: asciiPostProcessing, ...asciiBase } = asciiSettings;
   const resolvedMode = formEffectMode === "dither" ? "dither" : "ascii";
 
@@ -735,6 +788,7 @@ function AsciiPlaygroundCanvas() {
       cameraDistance={CAMERA_DISTANCE}
       showOrbitControls
       mediaAdjustments={mediaAdjustments}
+      videoSettings={videoSettings}
     />
   );
 }
