@@ -57,30 +57,44 @@ export default {
 
 ## 🧪 Usage
 
-`PlaygroundCanvas` wraps the playground with a react-three-fiber canvas. Pass any `Canvas` props through `mediaProps`:
+Use the `Efecto` component directly in your scene. It works with both images and videos and accepts ASCII or dither settings:
 
-```ts
-import { PlaygroundCanvas } from "@toriistudio/v0-efecto";
-
-function MyScene() {
-  return (
-    <mesh>
-      <boxGeometry args={[1, 1, 1]} />
-      <meshStandardMaterial color="hotpink" />
-    </mesh>
-  );
-}
+```tsx
+import { Efecto } from "@toriistudio/v0-efecto";
 
 export default function App() {
   return (
-    <PlaygroundCanvas>
-      <MyScene />
-    </PlaygroundCanvas>
+    <div style={{ width: "100vw", height: "100vh" }}>
+      <Efecto
+        mode="dither"
+        dither={{
+          pattern: "atkinson",
+          color1: "#050505",
+          color2: "#fafafa",
+          pixelation: 3,
+          contrast: 1,
+          brightness: 1,
+          threshold: 1,
+        }}
+        mediaAdjustments={{
+          brightness: 1,
+          contrast: 1,
+          saturation: 1,
+        }}
+        mouseParallax
+        parallaxIntensity={0.5}
+        src="/your-image-or-video-url"
+        videoSettings={{
+          loop: true,
+          playbackSpeed: 0.5,
+        }}
+      />
+    </div>
   );
 }
 ```
 
-See [`examples/r3f-canvas`](./examples/r3f-canvas) for a full working example.
+See [`examples/playground`](./examples/playground) for a full working example with live controls.
 
 ## 💡 Example Use Cases
 
